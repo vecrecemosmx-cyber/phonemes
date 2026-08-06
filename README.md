@@ -1,0 +1,2 @@
+# phonemes
+american english phonemes
