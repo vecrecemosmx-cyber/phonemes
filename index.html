@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla Fonética Interactiva - Inglés Americano</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --vowel: #dbeafe;
+            --vowel-border: #3b82f6;
+            --consonant: #fef3c7;
+            --consonant-border: #f59e0b;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        p.instruccion {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        .leyenda {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .leyenda-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .vocal-box {
+            background-color: var(--vowel);
+            border: 1px solid var(--vowel-border);
+        }
+
+        .consonante-box {
+            background-color: var(--consonant);
+            border: 1px solid var(--consonant-border);
+        }
+
+        .grid-fonemas {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .boton-fonema {
+            background-color: var(--card-bg);
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .boton-fonema:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .boton-fonema:active {
+            transform: translateY(0);
+        }
+
+        .boton-fonema.vocal {
+            background-color: var(--vowel);
+            border-color: var(--vowel-border);
+        }
+
+        .boton-fonema.consonante {
+            background-color: var(--consonant);
+            border-color: var(--consonant-border);
+        }
+
+        .simbolo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .ejemplo {
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        /* Animación de pulso cuando se está reproduciendo o cargando el audio */
+        .reproduciendo {
+            animation: pulso 1s infinite alternate;
+        }
+
+        @keyframes pulso {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tabla Fonética Interactiva (Sonidos Reales)</h1>
+    <p class="instruccion">Haz clic en un fonema para escuchar tu grabación de voz humana aislada (Inglés Americano).</p>
+
+    <div class="leyenda">
+        <div class="leyenda-item">
+            <div class="color-box vocal-box"></div>
+            <span>Vocales y Diptongos</span>
+        </div>
+        <div class="leyenda-item">
+            <div class="color-box consonante-box"></div>
+            <span>Consonantes</span>
+        </div>
+    </div>
+
+    <div id="tabla-fonemas" class="grid-fonemas"></div>
+
+    <script>
+        // ========================================================
+        // CONFIGURACIÓN DE TU ENTORNO REAL DE GITHUB (SINTAXIS CORREGIDA)
+        // ========================================================
+        const USUARIO_GITHUB = "vecrecemosmx-cyber"; 
+        const NOMBRE_REPOSITORIO = "phonemes";    
+        const RAMA = "main"; 
+        
+        // Se utilizan acentos graves (`) en toda la cadena para que los `${}` funcionen de forma nativa
+        const URL_BASE = `https://githubusercontent.com{USUARIO_GITHUB}/${NOMBRE_REPOSITORIO}/${RAMA}/`;
+
+        // Lista de tus 42 fonemas mapeados exactamente a tus archivos .mp3
+        const fonemas = [
+            // VOCALES CORTAS Y LARGAS
+            { simbolo: "i:", archivo: "PHONEME-GREEN.mp3", ejemplo: "green", tipo: "vocal" },
+            { simbolo: "ɪ", archivo: "PHONEME-PINK.mp3", ejemplo: "pink", tipo: "vocal" },
+            { simbolo: "ʊ", archivo: "PHONEME-WOOD.mp3", ejemplo: "wood", tipo: "vocal" },
+            { simbolo: "u:", archivo: "PHONEME-BLUE.mp3", ejemplo: "blue", tipo: "vocal" },
+            { simbolo: "e", archivo: "PHONEME-RED.mp3", ejemplo: "red", tipo: "vocal" },
+            { simbolo: "ə", archivo: "PHONEME-DUST.mp3", ejemplo: "dust", tipo: "vocal" },
+            { simbolo: "ɜ:r", archivo: "PHONEME-BIRD.mp3", ejemplo: "bird", tipo: "vocal" },
+            { simbolo: "ɔ:", archivo: "PHONEME-MAUVE.mp3", ejemplo: "mauve", tipo: "vocal" },
+            { simbolo: "æ", archivo: "PHONEME-SAND.mp3", ejemplo: "sand", tipo: "vocal" },
+            { simbolo: "ʌ", archivo: "PHONEME-CUP.mp3", ejemplo: "cup", tipo: "vocal" },
+            { simbolo: "ɑ:", archivo: "PHONEME-COFFEE.mp3", ejemplo: "coffee", tipo: "vocal" },
+            { simbolo: "ɒ", archivo: "PHONEME-POT.mp3", ejemplo: "pot", tipo: "vocal" },
+            
+            // DIPTONGOS
+            { simbolo: "eɪ", archivo: "PHONEME-JADE.mp3", ejemplo: "jade", tipo: "vocal" },
+            { simbolo: "aɪ", archivo: "PHONEME-LIME.mp3", ejemplo: "lime", tipo: "vocal" },
+            { simbolo: "ɔɪ", archivo: "PHONEME-TURQUOISE.mp3", ejemplo: "turquoise", tipo: "vocal" },
+            { simbolo: "aʊ", archivo: "PHONEME-BROWN.mp3", ejemplo: "brown", tipo: "vocal" },
+            { simbolo: "oʊ", archivo: "PHONEME-GOLD.mp3", ejemplo: "gold", tipo: "vocal" },
+            { simbolo: "ɪə", archivo: "PHONEME-NEAR.mp3", ejemplo: "near", tipo: "vocal" },
+
+            // CONSONANTES OCLUSIVAS
+            { simbolo: "p", archivo: "PHONEME-PIG.mp3", ejemplo: "pig", tipo: "consonante" },
+            { simbolo: "b", archivo: "PHONEME-BEAR.mp3", ejemplo: "bear", tipo: "consonante" },
+            { simbolo: "t", archivo: "PHONEME-TURTLE.mp3", ejemplo: "turtle", tipo: "consonante" },
+            { simbolo: "d", archivo: "PHONEME-DOG.mp3", ejemplo: "dog", tipo: "consonante" },
+            { simbolo: "k", archivo: "PHONEME-CAT.mp3", ejemplo: "cat", tipo: "consonante" },
+            { simbolo: "g", archivo: "PHONEME-GOAT.mp3", ejemplo: "goat", tipo: "consonante" },
+            
+            // CONSONANTES FRICATIVAS Y AFRICADAS
+            { simbolo: "f", archivo: "PHONEME-FROG.mp3", ejemplo: "frog", tipo: "consonante" },
+            { simbolo: "v", archivo: "PHONEME-BEAVER.mp3", ejemplo: "beaver", tipo: "consonante" },
+            { simbolo: "θ", archivo: "PHONEME-PANTHER.mp3", ejemplo: "panther", tipo: "consonante" },
+            { simbolo: "ð", archivo: "PHONEME-FEATHER.mp3", ejemplo: "feather", tipo: "consonante" },
+            { simbolo: "s", archivo: "PHONEME-SNAKE.mp3", ejemplo: "snake", tipo: "consonante" },
+            { simbolo: "z", archivo: "PHONEME-ZEBRA.mp3", ejemplo: "zebra", tipo: "consonante" },
+            { simbolo: "ʃ", archivo: "PHONEME-SHEEP.mp3", ejemplo: "sheep", tipo: "consonante" },
+            { simbolo: "ʒ", archivo: "PHONEME-TELEVISION.mp3", ejemplo: "television", tipo: "consonante" },
+            { simbolo: "tʃ", archivo: "PHONEME-CHICKEN.mp3", ejemplo: "chicken", tipo: "consonante" },
+            { simbolo: "dʒ", archivo: "PHONEME-GIRAFFE.mp3", ejemplo: "giraffe", tipo: "consonante" },
+            { simbolo: "h", archivo: "PHONEME-HORSE.mp3", ejemplo: "horse", tipo: "consonante" },
+            
+            // NASALES Y APROXIMANTES
+            { simbolo: "m", archivo: "PHONEME-MOUSE.mp3", ejemplo: "mouse", tipo: "consonante" },
+            { simbolo: "n", archivo: "PHONEME-DINOSAUR.mp3", ejemplo: "dinosaur", tipo: "consonante" },
+            { simbolo: "ŋ", archivo: "PHONEME-PENGUIN.mp3", ejemplo: "penguin", tipo: "consonante" },
+            { simbolo: "l", archivo: "PHONEME-LION.mp3", ejemplo: "lion", tipo: "consonante" },
+            { simbolo: "r", archivo: "PHONEME-RABBIT.mp3", ejemplo: "rabbit", tipo: "consonante" },
+            { simbolo: "w", archivo: "PHONEME-WOLF.mp3", ejemplo: "wolf", tipo: "consonante" },
+            { simbolo: "j", archivo: "PHONEME-YAK.mp3", ejemplo: "yak", tipo: "consonante" }
+        ];
+
+        const contenedor = document.getElementById('tabla-fonemas');
+        let audioActual = null;
+
+        fonemas.forEach(fonema => {
+            const boton = document.createElement('button');
+            boton.className = `boton-fonema ${fonema.tipo}`;
+            boton.innerHTML = `
+                <span class="simbolo">/${fonema.simbolo}/</span>
+                <span class="ejemplo">${fonema.ejemplo}</span>
+            `;
+
+            // Función interna para prevenir bloqueos por mayúsculas/minúsculas en el servidor de GitHub
+            function reproducirConFallback(nombreArchivoOriginal) {
+                const urlMinuscula = URL_BASE + nombreArchivoOriginal;
+                const urlMayuscula = URL_BASE + nombreArchivoOriginal.replace('.mp3', '.MP3');
+                
+                audioActual = new Audio();
+                audioActual.crossOrigin = "anonymous"; // Habilita permisos explícitos CORS para CodePen
+                audioActual.src = urlMinuscula;
+
+                audioActual.play().catch(() => {
+                    // Si el servidor falla buscando en minúsculas, cambia automáticamente la extensión a .MP3
+                    audioActual.src = urlMayuscula;
+                    audioActual.play().catch(err => {
+                        console.error("Error: El archivo de audio no existe en la raíz del repositorio.", err);
+                        boton.classList.remove('reproduciendo');
+                    });
+                });
+
+                audioActual.onended = () => {
+                    boton.classList.remove('reproduciendo');
+                };
+            }
+
+            boton.addEventListener('click', () => {
+                if (audioActual) {
+                    audioActual.pause();
+                    document.querySelectorAll('.boton-fonema').forEach(b => b.classList.remove('reproduciendo'));
+                }
+
+                boton.classList.add('reproduciendo');
+                reproducirConFallback(fonema.archivo);
+            });
+
+            contenedor.appendChild(boton);
+        });
+    </script>
+</body>
+</html>
