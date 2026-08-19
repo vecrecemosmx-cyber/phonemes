@@ -1,36 +1,45 @@
 // ==========================================
-// 1. NAVEGACIÓN GLOBAL DE PANTALLAS (Fuera del DOMContentLoaded)
+// 1. NAVEGACIÓN GLOBAL DE PANTALLAS
 // ==========================================
-
-window.mostrarPantalla = function(pantallaId) {
-    document.getElementById('pantalla-bienvenida').classList.add('oculto');
-    document.getElementById('pantalla-curso').classList.add('oculto');
-    document.getElementById('pantalla-evaluacion').classList.add('oculto');
-    
-    document.getElementById(pantallaId).classList.remove('oculto');
+window.mostrarPantalla = (pantallaId) => {
+    document.querySelectorAll('#pantalla-bienvenida, #pantalla-curso, #pantalla-evaluacion')
+            .forEach(p => p.classList.add('oculto'));
+    document.getElementById(pantallaId)?.classList.remove('oculto');
 };
 
-window.alternarMenu = function() {
-    const barra = document.getElementById('barraLateral');
-    barra.classList.toggle('abierto');
+window.alternarMenu = () => {
+    document.getElementById('barraLateral')?.classList.toggle('abierto');
 };
 
-window.cargarLeccion = function(numeroLeccion) {
+window.cargarLeccion = (numeroLeccion) => {
     const zonaContenido = document.getElementById('zona-dinamica-leccion');
-    
-    document.querySelectorAll('.item-leccion').forEach((btn, index) => {
-        if (index === (numeroLeccion - 1)) {
-            btn.classList.add('activo');
-        } else {
-            btn.classList.remove('activo');
-        }
+    if (!zonaContenido) return;
+
+    document.querySelectorAll('.item-leccion').forEach((btn, idx) => {
+        btn.classList.toggle('activo', idx === (numeroLeccion - 1));
     });
 
     if (window.innerWidth < 768) {
-        document.getElementById('barraLateral').classList.remove('abierto');
+        document.getElementById('barraLateral')?.classList.remove('abierto');
     }
 
     if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+    // Estructura HTML base reutilizable para las lecciones 2 y 3
+    const generarHTMLTabla = (titulo, color, leyenda) => `
+        <div class="contenedor-tabla-interactiva">
+            <div class="tarjeta" style="margin-bottom: 20px; padding: 20px;">
+                <h2 style="color:${color}; margin-bottom:8px;">${titulo}</h2>
+                <p class="subtitulo-tabla">Haz clic en cualquier fonema para escuchar su sonido real de voz humana aislada.</p>
+                <div class="leyenda-unificada">
+                    <div class="leyenda-item-u">
+                        <div class="cuadro-color cuadro-${leyenda}"></div>
+                        <span>${leyenda === 'vocal' ? 'Vocales y Diptongos' : 'Consonantes'}</span>
+                    </div>
+                </div>
+            </div>
+            <div id="tabla-fonemas-dinamica" class="grid-fonemas-u"></div>
+        </div>`;
 
     switch(numeroLeccion) {
         case 1:
@@ -41,179 +50,85 @@ window.cargarLeccion = function(numeroLeccion) {
                 </div>`;
             break;
         case 2:
-            // 1. Inyectamos la estructura visual de la tabla (Filtrada para Vocales)
-            zonaContenido.innerHTML = `
-                <div class="contenedor-tabla-interactiva">
-                    <div class="tarjeta" style="margin-bottom: 20px; padding: 20px;">
-                        <h2 style="color:#0284c7; margin-bottom:8px;">Lección 2: Vocales del Alfabeto Fonético</h2>
-                        <p class="subtitulo-tabla">Haz clic en cualquier fonema para escuchar su sonido vocálico real de voz humana aislada.</p>
-                        
-                        <div class="leyenda-unificada">
-                            <div class="leyenda-item-u">
-                                <div class="cuadro-color cuadro-vocal"></div>
-                                <span>Vocales y Diptongos</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="tabla-fonemas-dinamica" class="grid-fonemas-u"></div>
-                </div>
-            `;
-
-            // Ejecutamos la función auxiliar para dibujar solo las vocales
+            zonaContenido.innerHTML = generarHTMLTabla("Lección 2: Vocales del Alfabeto Fonético", "#0284c7", "vocal");
             renderizarTablaPorTipo("vocal");
             break;
-
         case 3:
-            // 2. Inyectamos la estructura visual de la tabla (Filtrada para Consonantes)
-            zonaContenido.innerHTML = `
-                <div class="contenedor-tabla-interactiva">
-                    <div class="tarjeta" style="margin-bottom: 20px; padding: 20px;">
-                        <h2 style="color:#10b981; margin-bottom:8px;">Lección 3: Consonantes del Alfabeto Fonético</h2>
-                        <p class="subtitulo-tabla">Haz clic en cualquier fonema para escuchar su sonido consonántico real de voz humana aislada.</p>
-                        
-                        <div class="leyenda-unificada">
-                            <div class="leyenda-item-u">
-                                <div class="cuadro-color cuadro-consonante"></div>
-                                <span>Consonantes</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="tabla-fonemas-dinamica" class="grid-fonemas-u"></div>
-                </div>
-            `;
-
-            // Ejecutamos la función auxiliar para dibujar solo las consonantes
+            zonaContenido.innerHTML = generarHTMLTabla("Lección 3: Consonantes del Alfabeto Fonético", "#10b981", "consonante");
             renderizarTablaPorTipo("consonante");
             break;
         case 4:
-            // Obtenemos el diseño de la app de fonemas desde la plantilla oculta
-            const plantilla = document.getElementById('plantilla-app-fonemas').innerHTML;
-            
-            // La inyectamos en la zona visible de la lección
-            zonaContenido.innerHTML = plantilla;
-            
-            // Le pedimos al script que despierte y active la lógica del carrusel y palabras
-            setTimeout(() => {
-                if (typeof window.inicializarInterfazFonema === 'function') {
-                    window.inicializarInterfazFonema();
-                }
-            }, 50);
+            zonaContenido.innerHTML = document.getElementById('plantilla-app-fonemas')?.innerHTML || '';
+            setTimeout(() => typeof window.inicializarInterfazFonema === 'function' && window.inicializarInterfazFonema(), 50);
             break;
         default:
-            zonaContenido.innerHTML = `
-                <div class="tarjeta">
-                    <h2>Contenido en construcción</h2>
-                    <p>Pronto estará disponible esta lección.</p>
-                </div>`;
+            zonaContenido.innerHTML = `<div class="tarjeta"><h2>Contenido en construcción</h2><p>Pronto estará disponible esta lección.</p></div>`;
     }
 };
 
-
 // ==========================================
-// 2. LÓGICA DE LA APP DE FONEMAS (Cuando el DOM esté listo)
+// 2. LÓGICA DE LA APP DE FONEMAS (DOMContentLoaded)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    
     const baseDatosCategorias = {
         'vocales_cortas': [
             { 
-                simbolo: '/ɪ/', 
-                tipo: 'SHORT VOWEL', 
-                textoAudioAislado: 'ih', 
+                simbolo: '/ɪ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'ih', 
                 grafemas: { 
                     'i': [
-                        { html: 'f<span class="resaltado">i</span>sh', textolimpio: 'fish' },
-                        { html: 'p<span class="resaltado">i</span>n', textolimpio: 'pin' },
-                        { html: 's<span class="resaltado">i</span>t', textolimpio: 'sit' },
-                        { html: 'k<span class="resaltado">i</span>ck', textolimpio: 'kick' },
-                        { html: 'l<span class="resaltado">i</span>p', textolimpio: 'lip' },
-                        { html: 'm<span class="resaltado">i</span>lk', textolimpio: 'milk' },
-                        { html: 'w<span class="resaltado">i</span>nd', textolimpio: 'wind' },
-                        { html: 'r<span class="resaltado">i</span>ng', textolimpio: 'ring' },
-                        { html: 's<span class="resaltado">i</span>ng', textolimpio: 'sing' },
-                        { html: 'h<span class="resaltado">i</span>t', textolimpio: 'hit' },
-                        { html: 'l<span class="resaltado">i</span>ft', textolimpio: 'lift' },
-                        { html: 'p<span class="resaltado">i</span>ll', textolimpio: 'pill' },
-                        { html: 'w<span class="resaltado">i</span>sh', textolimpio: 'wish' },
-                        { html: 'm<span class="resaltado">i</span>ss', textolimpio: 'miss' },
+                        { html: 'f<span class="resaltado">i</span>sh', textolimpio: 'fish' }, { html: 'p<span class="resaltado">i</span>n', textolimpio: 'pin' },
+                        { html: 's<span class="resaltado">i</span>t', textolimpio: 'sit' }, { html: 'k<span class="resaltado">i</span>ck', textolimpio: 'kick' },
+                        { html: 'l<span class="resaltado">i</span>p', textolimpio: 'lip' }, { html: 'm<span class="resaltado">i</span>lk', textolimpio: 'milk' },
+                        { html: 'w<span class="resaltado">i</span>nd', textolimpio: 'wind' }, { html: 'r<span class="resaltado">i</span>ng', textolimpio: 'ring' },
+                        { html: 's<span class="resaltado">i</span>ng', textolimpio: 'sing' }, { html: 'h<span class="resaltado">i</span>t', textolimpio: 'hit' },
+                        { html: 'l<span class="resaltado">i</span>ft', textolimpio: 'lift' }, { html: 'p<span class="resaltado">i</span>ll', textolimpio: 'pill' },
+                        { html: 'w<span class="resaltado">i</span>sh', textolimpio: 'wish' }, { html: 'm<span class="resaltado">i</span>ss', textolimpio: 'miss' },
                         { html: 'k<span class="resaltado">i</span>ng', textolimpio: 'king' }
                     ], 
                     'y': [
-                        { html: 'g<span class="resaltado">y</span>m', textolimpio: 'gym' },
-                        { html: 's<span class="resaltado">y</span>stem', textolimpio: 'system' },
-                        { html: 'cr<span class="resaltado">y</span>stal', textolimpio: 'crystal' },
-                        { html: 'm<span class="resaltado">y</span>th', textolimpio: 'myth' },
-                        { html: 'l<span class="resaltado">y</span>ric', textolimpio: 'lyric' },
-                        { html: 's<span class="resaltado">y</span>mbol', textolimpio: 'symbol' },
-                        { html: 's<span class="resaltado">y</span>mptom', textolimpio: 'symptom' },
-                        { html: 'c<span class="resaltado">y</span>linder', textolimpio: 'cylinder' },
-                        { html: 't<span class="resaltado">y</span>pical', textolimpio: 'typical' },
-                        { html: 'p<span class="resaltado">y</span>ramid', textolimpio: 'pyramid' },
-                        { html: 'ox<span class="resaltado">y</span>gen', textolimpio: 'oxygen' },
-                        { html: 'phys<span class="resaltado">y</span>cs', textolimpio: 'physics' },
-                        { html: 'myst<span class="resaltado">y</span>c', textolimpio: 'mystic' },
-                        { html: 's<span class="resaltado">y</span>rup', textolimpio: 'syrup' },
+                        { html: 'g<span class="resaltado">y</span>m', textolimpio: 'gym' }, { html: 's<span class="resaltado">y</span>stem', textolimpio: 'system' },
+                        { html: 'cr<span class="resaltado">y</span>stal', textolimpio: 'crystal' }, { html: 'm<span class="resaltado">y</span>th', textolimpio: 'myth' },
+                        { html: 'l<span class="resaltado">y</span>ric', textolimpio: 'lyric' }, { html: 's<span class="resaltado">y</span>mbol', textolimpio: 'symbol' },
+                        { html: 's<span class="resaltado">y</span>mptom', textolimpio: 'symptom' }, { html: 'c<span class="resaltado">y</span>linder', textolimpio: 'cylinder' },
+                        { html: 't<span class="resaltado">y</span>pical', textolimpio: 'typical' }, { html: 'p<span class="resaltado">y</span>ramid', textolimpio: 'pyramid' },
+                        { html: 'ox<span class="resaltado">y</span>gen', textolimpio: 'oxygen' }, { html: 'phys<span class="resaltado">y</span>cs', textolimpio: 'physics' },
+                        { html: 'myst<span class="resaltado">y</span>c', textolimpio: 'mystic' }, { html: 's<span class="resaltado">y</span>rup', textolimpio: 'syrup' },
                         { html: 'h<span class="resaltado">y</span>mnal', textolimpio: 'hymnal' }
                     ], 
                     'ui': [
-                        { html: 'b<span class="resaltado">ui</span>ld', textolimpio: 'build' },
-                        { html: 'g<span class="resaltado">ui</span>lt', textolimpio: 'guilt' },
-                        { html: 'g<span class="resaltado">ui</span>tar', textolimpio: 'guitar' },
-                        { html: 'b<span class="resaltado">ui</span>lt', textolimpio: 'built' },
-                        { html: 'b<span class="resaltado">ui</span>lder', textolimpio: 'builder' },
-                        { html: 'b<span class="resaltado">ui</span>lding', textolimpio: 'building' },
-                        { html: 'g<span class="resaltado">ui</span>lty', textolimpio: 'guilty' },
-                        { html: 'g<span class="resaltado">ui</span>ld', textolimpio: 'guild' },
-                        { html: 'circ<span class="resaltado">ui</span>t', textolimpio: 'circuit' },
-                        { html: 'g<span class="resaltado">ui</span>tars', textolimpio: 'guitars' },
-                        { html: 'circ<span class="resaltado">ui</span>ts', textolimpio: 'circuits' },
-                        { html: 'b<span class="resaltado">ui</span>ldings', textolimpio: 'buildings' },
-                        { html: 'g<span class="resaltado">ui</span>ltiness', textolimpio: 'guiltiness' },
-                        { html: 're-b<span class="resaltado">ui</span>ld', textolimpio: 'rebuild' },
+                        { html: 'b<span class="resaltado">ui</span>ld', textolimpio: 'build' }, { html: 'g<span class="resaltado">ui</span>lt', textolimpio: 'guilt' },
+                        { html: 'g<span class="resaltado">ui</span>tar', textolimpio: 'guitar' }, { html: 'b<span class="resaltado">ui</span>lt', textolimpio: 'built' },
+                        { html: 'b<span class="resaltado">ui</span>lder', textolimpio: 'builder' }, { html: 'b<span class="resaltado">ui</span>lding', textolimpio: 'building' },
+                        { html: 'g<span class="resaltado">ui</span>lty', textolimpio: 'guilty' }, { html: 'g<span class="resaltado">ui</span>ld', textolimpio: 'guild' },
+                        { html: 'circ<span class="resaltado">ui</span>t', textolimpio: 'circuit' }, { html: 'g<span class="resaltado">ui</span>tars', textolimpio: 'guitars' },
+                        { html: 'circ<span class="resaltado">ui</span>ts', textolimpio: 'circuits' }, { html: 'b<span class="resaltado">ui</span>ldings', textolimpio: 'buildings' },
+                        { html: 'g<span class="resaltado">ui</span>ltiness', textolimpio: 'guiltiness' }, { html: 're-b<span class="resaltado">ui</span>ld', textolimpio: 'rebuild' },
                         { html: 'bis-c<span class="resaltado">ui</span>t', textolimpio: 'biscuit' }
                     ],
                     'e': [
-                        { html: 'd<span class="resaltado">e</span>cide', textolimpio: 'decide' },
-                        { html: 'b<span class="resaltado">e</span>gin', textolimpio: 'begin' },
-                        { html: 'pr<span class="resaltado">e</span>tty', textolimpio: 'pretty' },
-                        { html: 'd<span class="resaltado">e</span>fend', textolimpio: 'defend' },
-                        { html: 'b<span class="resaltado">e</span>fore', textolimpio: 'before' },
-                        { html: 'd<span class="resaltado">e</span>gree', textolimpio: 'degree' },
-                        { html: 'd<span class="resaltado">e</span>lay', textolimpio: 'delay' },
-                        { html: 'd<span class="resaltado">e</span>pend', textolimpio: 'depend' },
-                        { html: 'd<span class="resaltado">e</span>sire', textolimpio: 'desire' },
-                        { html: 'd<span class="resaltado">e</span>tect', textolimpio: 'detect' },
-                        { html: 'd<span class="resaltado">e</span>vice', textolimpio: 'device' },
-                        { html: 'b<span class="resaltado">e</span>tween', textolimpio: 'between' },
-                        { html: 'b<span class="resaltado">e</span>have', textolimpio: 'behave' },
-                        { html: 'b<span class="resaltado">e</span>hind', textolimpio: 'behind' },
+                        { html: 'd<span class="resaltado">e</span>cide', textolimpio: 'decide' }, { html: 'b<span class="resaltado">e</span>gin', textolimpio: 'begin' },
+                        { html: 'pr<span class="resaltado">e</span>tty', textolimpio: 'pretty' }, { html: 'd<span class="resaltado">e</span>fend', textolimpio: 'defend' },
+                        { html: 'b<span class="resaltado">e</span>fore', textolimpio: 'before' }, { html: 'd<span class="resaltado">e</span>gree', textolimpio: 'degree' },
+                        { html: 'd<span class="resaltado">e</span>lay', textolimpio: 'delay' }, { html: 'd<span class="resaltado">e</span>pend', textolimpio: 'depend' },
+                        { html: 'd<span class="resaltado">e</span>sire', textolimpio: 'desire' }, { html: 'd<span class="resaltado">e</span>tect', textolimpio: 'detect' },
+                        { html: 'd<span class="resaltado">e</span>vice', textolimpio: 'device' }, { html: 'b<span class="resaltado">e</span>tween', textolimpio: 'between' },
+                        { html: 'b<span class="resaltado">e</span>have', textolimpio: 'behave' }, { html: 'b<span class="resaltado">e</span>hind', textolimpio: 'behind' },
                         { html: 'b<span class="resaltado">e</span>lieve', textolimpio: 'believe' }
                     ],
                     'a': [
-                        { html: 'dam<span class="resaltado">a</span>ge', textolimpio: 'damage' },
-                        { html: 'vill<span class="resaltado">a</span>ge', textolimpio: 'village' },
-                        { html: 'man<span class="resaltado">a</span>ge', textolimpio: 'manage' },
-                        { html: 'garb<span class="resaltado">a</span>ge', textolimpio: 'garbage' },
-                        { html: 'pack<span class="resaltado">a</span>ge', textolimpio: 'package' },
-                        { html: 'bagg<span class="resaltado">a</span>ge', textolimpio: 'baggage' },
-                        { html: 'lugg<span class="resaltado">a</span>ge', textolimpio: 'luggage' },
-                        { html: 'band<span class="resaltado">a</span>ge', textolimpio: 'bandage' },
-                        { html: 'cour<span class="resaltado">a</span>ge', textolimpio: 'courage' },
-                        { html: 'stor<span class="resaltado">a</span>ge', textolimpio: 'storage' },
-                        { html: 'cott<span class="resaltado">a</span>ge', textolimpio: 'cottage' },
-                        { html: 'saus<span class="resaltado">a</span>ge', textolimpio: 'sausage' },
-                        { html: 'advant<span class="resaltado">a</span>ge', textolimpio: 'advantage' },
-                        { html: 'mess<span class="resaltado">a</span>ge', textolimpio: 'message' },
+                        { html: 'dam<span class="resaltado">a</span>ge', textolimpio: 'damage' }, { html: 'vill<span class="resaltado">a</span>ge', textolimpio: 'village' },
+                        { html: 'man<span class="resaltado">a</span>ge', textolimpio: 'manage' }, { html: 'garb<span class="resaltado">a</span>ge', textolimpio: 'garbage' },
+                        { html: 'pack<span class="resaltado">a</span>ge', textolimpio: 'package' }, { html: 'bagg<span class="resaltado">a</span>ge', textolimpio: 'baggage' },
+                        { html: 'lugg<span class="resaltado">a</span>ge', textolimpio: 'luggage' }, { html: 'band<span class="resaltado">a</span>ge', textolimpio: 'bandage' },
+                        { html: 'cour<span class="resaltado">a</span>ge', textolimpio: 'courage' }, { html: 'stor<span class="resaltado">a</span>ge', textolimpio: 'storage' },
+                        { html: 'cott<span class="resaltado">a</span>ge', textolimpio: 'cottage' }, { html: 'saus<span class="resaltado">a</span>ge', textolimpio: 'sausage' },
+                        { html: 'advant<span class="resaltado">a</span>ge', textolimpio: 'advantage' }, { html: 'mess<span class="resaltado">a</span>ge', textolimpio: 'message' },
                         { html: 'pass<span class="resaltado">a</span>ge', textolimpio: 'passage' }
                     ]
                 } 
             },
             { 
-                simbolo: '/æ/', 
-                tipo: 'SHORT VOWEL', 
-                textoAudioAislado: 'ah', 
+                simbolo: '/æ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'ah', 
                 grafemas: { 
                     'a': [
                         { html: 'c<span class="resaltado">a</span>t', textolimpio: 'cat' }, { html: 'm<span class="resaltado">a</span>p', textolimpio: 'map' }, { html: 'b<span class="resaltado">a</span>d', textolimpio: 'bad' },
@@ -223,19 +138,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         { html: 'p<span class="resaltado">a</span>st', textolimpio: 'past' }, { html: 'cl<span class="resaltado">a</span>ss', textolimpio: 'class' }, { html: 'g<span class="resaltado">a</span>s', textolimpio: 'gas' }
                     ],
                     'au': [
-                        { html: 'l<span class="resaltado">au</span>gh', textolimpio: 'laugh' }, 
-                        { html: 'l<span class="resaltado">au</span>ghed', textolimpio: 'laughed' }, 
-                        { html: 'l<span class="resaltado">au</span>ghing', textolimpio: 'laughing' },
-                        { html: 'l<span class="resaltado">au</span>ghter', textolimpio: 'laughter' }, 
-                        { html: 'l<span class="resaltado">au</span>ghable', textolimpio: 'laughable' }, 
-                        { html: 'dr<span class="resaltado">au</span>ght', textolimpio: 'draught' }
+                        { html: 'l<span class="resaltado">au</span>gh', textolimpio: 'laugh' }, { html: 'l<span class="resaltado">au</span>ghed', textolimpio: 'laughed' }, 
+                        { html: 'l<span class="resaltado">au</span>ghing', textolimpio: 'laughing' }, { html: 'l<span class="resaltado">au</span>ghter', textolimpio: 'laughter' }, 
+                        { html: 'l<span class="resaltado">au</span>ghable', textolimpio: 'laughable' }, { html: 'dr<span class="resaltado">au</span>ght', textolimpio: 'draught' }
                     ]
                 } 
             },
             {
-                simbolo: '/ɛ/',
-                tipo: 'SHORT VOWEL',
-                textoAudioAislado: 'eh',
+                simbolo: '/ɛ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'eh',
                 grafemas: {
                     'e': [
                         { html: 'b<span class="resaltado">e</span>d', textolimpio: 'bed' }, { html: 'r<span class="resaltado">e</span>d', textolimpio: 'red' }, { html: 'p<span class="resaltado">e</span>n', textolimpio: 'pen' },
@@ -245,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         { html: 'n<span class="resaltado">e</span>xt', textolimpio: 'next' }, { html: 'h<span class="resaltado">ea</span>vy', textolimpio: 'heavy' }, { html: 'd<span class="resaltado">e</span>sk', textolimpio: 'desk' }
                     ],
                     'ea': [
-                        { html: 'h<span class="resaltado">ea</span>d', textolimpio: 'head' }, { html: 'br<span class="resaltado">ea</span>d', textolimpio: 'bread' }, { html: 'd<span class="resaltado">ea</span>f', textolimpio: 'deaf' },
+                        { html: 'h<span class="resaltado">ea</span>d', textolimpio: 'head' }, { html: 'br<span class="resaltado">ea</span>bread', textolimpio: 'bread' }, { html: 'd<span class="resaltado">ea</span>f', textolimpio: 'deaf' },
                         { html: 'd<span class="resaltado">ea</span>th', textolimpio: 'death' }, { html: 'r<span class="resaltado">ea</span>dy', textolimpio: 'ready' }, { html: 'h<span class="resaltado">ea</span>lth', textolimpio: 'health' },
                         { html: 'w<span class="resaltado">ea</span>lth', textolimpio: 'wealth' }, { html: 'f<span class="resaltado">ea</span>ther', textolimpio: 'feather' }, { html: 'l<span class="resaltado">ea</span>ther', textolimpio: 'leather' },
                         { html: 'w<span class="resaltado">ea</span>ther', textolimpio: 'weather' }, { html: 'h<span class="resaltado">ea</span>vy', textolimpio: 'heavy' }, { html: 'thr<span class="resaltado">ea</span>d', textolimpio: 'thread' },
@@ -254,9 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
             {
-                simbolo: '/ʊ/',
-                tipo: 'SHORT VOWEL',
-                textoAudioAislado: 'uuh',
+                simbolo: '/ʊ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'uuh',
                 grafemas: {
                     'oo': [
                         { html: 'b<span class="resaltado">oo</span>k', textolimpio: 'book' }, { html: 'f<span class="resaltado">oo</span>t', textolimpio: 'foot' }, { html: 'g<span class="resaltado">oo</span>d', textolimpio: 'good' },
@@ -270,14 +178,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         { html: 'b<span class="resaltado">u</span>ll', textolimpio: 'bull' }, { html: 'b<span class="resaltado">u</span>sh', textolimpio: 'bush' }, { html: 'p<span class="resaltado">u</span>t', textolimpio: 'put' },
                         { html: 'p<span class="resaltado">u</span>dding', textolimpio: 'pudding' }, { html: 'b<span class="resaltado">u</span>tcher', textolimpio: 'butcher' }, { html: 'b<span class="resaltado">u</span>llet', textolimpio: 'bullet' },
                         { html: 'p<span class="resaltado">u</span>lpit', textolimpio: 'pulpit' }, { html: 'f<span class="resaltado">u</span>llback', textolimpio: 'fullback' }, { html: 'p<span class="resaltado">u</span>lley', textolimpio: 'pulley' },
-                        { html: 'b<span class="resaltado">u</span>lly', textolimpio: 'bully' }, { html: 'p<span class="resaltado">u</span>ssy', textolimpio: 'pussy' }, { html: 's<span class="resaltado">u</span>gar', textolimpio: 'sugar' }
+                        { html: 'b<span class="resaltado">u</span>lly', textolimpio: 'bully' }, { html: 'c<span class="resaltado">u</span>shion', textolimpio: 'cushion' }, { html: 's<span class="resaltado">u</span>gar', textolimpio: 'sugar' }
                     ]
                 }
             },
             {
-                simbolo: '/ʌ/',
-                tipo: 'SHORT VOWEL',
-                textoAudioAislado: 'uh',
+                simbolo: '/ʌ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'uh',
                 grafemas: {
                     'u': [
                         { html: 'c<span class="resaltado">u</span>p', textolimpio: 'cup' }, { html: 'b<span class="resaltado">u</span>s', textolimpio: 'bus' }, { html: 'g<span class="resaltado">u</span>m', textolimpio: 'gum' },
@@ -296,9 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
             {
-                simbolo: '/ɒ/',
-                tipo: 'SHORT VOWEL',
-                textoAudioAislado: 'ox',
+                simbolo: '/ɒ/', tipo: 'SHORT VOWEL', textoAudioAislado: 'ox',
                 grafemas: {
                     'o': [
                         { html: 'h<span class="resaltado">o</span>t', textolimpio: 'hot' }, { html: 'n<span class="resaltado">o</span>t', textolimpio: 'not' }, { html: 'f<span class="resaltado">o</span>x', textolimpio: 'fox' },
@@ -317,9 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
             {
-                simbolo: '/ə/',
-                tipo: 'SCHWA VOWEL',
-                textoAudioAislado: 'uh',
+                simbolo: '/ə/', tipo: 'SCHWA VOWEL', textoAudioAislado: 'uh',
                 grafemas: {
                     'a': [
                         { html: '<span class="resaltado">a</span>bout', textolimpio: 'about' }, { html: 'b<span class="resaltado">a</span>nan<span class="resaltado">a</span>', textolimpio: 'banana' }, { html: '<span class="resaltado">a</span>gree', textolimpio: 'agree' },
@@ -340,13 +242,15 @@ document.addEventListener("DOMContentLoaded", () => {
         ]
     };
 
+    // Variables de estado interno de la app de fonemas
     let listaFonemasActivos = baseDatosCategorias['vocales_cortas'];
     let indiceCarruselActual = 0;
     let grafemaSeleccionadoActual = '';
     let indicesPalabras = {};
     let palabraSeleccionadaTexto = '';
 
-    window.reproducirTextoVoz = function(texto) {
+    // Motores de reproducción de audio por síntesis de voz (Web Speech API)
+    window.reproducirTextoVoz = (texto) => {
         if (!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const lectura = new SpeechSynthesisUtterance(texto);
@@ -355,60 +259,60 @@ document.addEventListener("DOMContentLoaded", () => {
         window.speechSynthesis.speak(lectura);
     };
 
-    window.reproducirFonema = function() {
-        if (!listaFonemasActivos || !listaFonemasActivos[indiceCarruselActual]) return;
-        const fonemaObj = listaFonemasActivos[indiceCarruselActual];
-        reproducirTextoVoz(fonemaObj.textoAudioAislado);
+    window.reproducirFonema = () => {
+        const fonemaObj = listaFonemasActivos?.[indiceCarruselActual];
+        if (fonemaObj) window.reproducirTextoVoz(fonemaObj.textoAudioAislado);
     };
 
-    window.reproducirPalabra = function() {
-        if (palabraSeleccionadaTexto) {
-            reproducirTextoVoz(palabraSeleccionadaTexto);
-        }
+    window.reproducirPalabra = () => {
+        if (palabraSeleccionadaTexto) window.reproducirTextoVoz(palabraSeleccionadaTexto);
     };
 
-    window.cambiarCategoria = function(categoriaKey) {
+    window.cambiarCategoria = (categoriaKey) => {
         listaFonemasActivos = baseDatosCategorias[categoriaKey];
         indiceCarruselActual = 0;
-        inicializarInterfazFonema();
+        window.inicializarInterfazFonema();
     };
 
-    window.navegarCarrusel = function(direccion) {
+    window.navegarCarrusel = (direccion) => {
         if (!listaFonemasActivos || listaFonemasActivos.length <= 1) return;
         indiceCarruselActual = (indiceCarruselActual + direccion + listaFonemasActivos.length) % listaFonemasActivos.length;
-        inicializarInterfazFonema();
+        window.inicializarInterfazFonema();
     };
 
-    window.inicializarInterfazFonema = function() {
-        const contenedorGrafemas = document.getElementById('contenedorGrafemas');
-        const contenedorPalabra = document.getElementById('contenedorPalabra');
-        const visualFonema = document.getElementById('visualFonema');
+    window.inicializarInterfazFonema = () => {
+        const refs = {
+            vg: document.getElementById('visualFonema'),
+            cp: document.getElementById('contenedorPalabra'),
+            cg: document.getElementById('contenedorGrafemas'),
+            ts: document.getElementById('textoTipoSonido'),
+            ci: document.getElementById('contadorIndice'),
+            tp: document.getElementById('totalPalabras')
+        };
 
-        if (!visualFonema || !contenedorPalabra || !contenedorGrafemas) return; 
-        
+        if (!refs.vg || !refs.cp || !refs.cg) return;
+
         if (!listaFonemasActivos || listaFonemasActivos.length === 0) {
-            visualFonema.innerText = '---';
-            document.getElementById('textoTipoSonido').innerText = 'PRÓXIMAMENTE';
-            contenedorPalabra.innerHTML = '---';
-            contenedorGrafemas.innerHTML = '';
-            document.getElementById('contadorIndice').innerText = '0';
-            document.getElementById('totalPalabras').innerText = '0';
+            refs.vg.innerText = '---';
+            if (refs.ts) refs.ts.innerText = 'PRÓXIMAMENTE';
+            refs.cp.innerHTML = '---';
+            refs.cg.innerHTML = '';
+            if (refs.ci) refs.ci.innerText = '0';
+            if (refs.tp) refs.tp.innerText = '0';
             palabraSeleccionadaTexto = '';
             return;
         }
 
         const fonemaObj = listaFonemasActivos[indiceCarruselActual];
-        
-        visualFonema.innerText = fonemaObj.simbolo;
-        document.getElementById('textoTipoSonido').innerText = fonemaObj.tipo;
-        
+        refs.vg.innerText = fonemaObj.simbolo;
+        if (refs.ts) refs.ts.innerText = fonemaObj.tipo;
+
         indicesPalabras = {};
         const listaGrafemas = Object.keys(fonemaObj.grafemas);
         listaGrafemas.forEach(g => indicesPalabras[g] = 0);
-        
-        // Seleccionamos por defecto el primer grafema de la lista
-        grafemaSeleccionadoActual = listaGrafemas[0]; 
-        
+
+        // Se corrige el bug original asignando la primera cadena de texto válida, no el array completo
+        grafemaSeleccionadoActual = listaGrafemas[0];
         renderizarBotonesGrafemas(listaGrafemas);
         mostrarPalabra(grafemaSeleccionadoActual);
     };
@@ -417,11 +321,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const contenedor = document.getElementById('contenedorGrafemas');
         if (!contenedor) return;
         contenedor.innerHTML = '';
-        
+
         listaGrafemas.forEach(grafema => {
             const boton = document.createElement('button');
-            boton.className = 'btn-grafema';
-            if(grafema === grafemaSeleccionadoActual) boton.classList.add('activo');
+            boton.className = `btn-grafema ${grafema === grafemaSeleccionadoActual ? 'activo' : ''}`;
             boton.innerText = grafema;
             boton.onclick = () => {
                 if (grafemaSeleccionadoActual === grafema) {
@@ -431,143 +334,132 @@ document.addEventListener("DOMContentLoaded", () => {
                     grafemaSeleccionadoActual = grafema;
                 }
                 mostrarPalabra(grafemaSeleccionadoActual);
-                
-                document.querySelectorAll('.btn-grafema').forEach(b => b.classList.remove('activo'));
-                boton.classList.add('activo');
+                document.querySelectorAll('.btn-grafema').forEach(b => b.classList.toggle('activo', b.innerText === grafemaSeleccionadoActual));
             };
             contenedor.appendChild(boton);
         });
     }
 
     function mostrarPalabra(grafema) {
-        const fonemaObj = listaFonemasActivos[indiceCarruselActual];
-        if (!fonemaObj || !fonemaObj.grafemas[grafema]) return;
+        const fonemaObj = listaFonemasActivos?.[indiceCarruselActual];
+        const listaPalabras = fonemaObj?.grafemas?.[grafema];
+        if (!listaPalabras) return;
 
-        const listaPalabras = fonemaObj.grafemas[grafema];
         const indiceActual = indicesPalabras[grafema];
         const palabraObj = listaPalabras[indiceActual];
-        
+
         palabraSeleccionadaTexto = palabraObj.textolimpio;
-        
-        const contenedorPalabra = document.getElementById('contenedorPalabra');
-        if (contenedorPalabra) contenedorPalabra.innerHTML = palabraObj.html;
-        
-        const contadorIndice = document.getElementById('contadorIndice');
-        if (contadorIndice) contadorIndice.innerText = indiceActual + 1;
-        
-        const totalPalabras = document.getElementById('totalPalabras');
-        if (totalPalabras) totalPalabras.innerText = listaPalabras.length;
-        
-        reproducirPalabra();
+
+        const cp = document.getElementById('contenedorPalabra');
+        if (cp) cp.innerHTML = palabraObj.html;
+
+        const ci = document.getElementById('contadorIndice');
+        if (ci) ci.innerText = indiceActual + 1;
+
+        const tp = document.getElementById('totalPalabras');
+        if (tp) tp.innerText = listaPalabras.length;
+
+        window.reproducirPalabra();
     }
 });
 
-    // Función auxiliar para renderizar y filtrar los 42 fonemas por su tipo (vocal o consonante)
-    function renderizarTablaPorTipo(tipoFiltro) {
-        // ========================================================
-        // CONFIGURACIÓN DE TU ENTORNO REAL DE GITHUB
-        // ========================================================
-        const USUARIO_GITHUB = "vecrecemosmx-cyber"; 
-        const NOMBRE_REPOSITORIO = "phonemes";    
-        const RAMA = "main"; 
+// ==========================================
+// 3. GENERACIÓN DE TABLAS DE FONEMAS (Lecciones 2 y 3)
+// ==========================================
+function renderizarTablaPorTipo(tipoFiltro) {
+    const URL_BASE = `https://raw.githubusercontent.com/vecrecemosmx-cyber/phonemes/main/`;
+    const lista42Fonemas = [
+        { simbolo: "i:", archivo: "PHONEME-GREEN.mp3", ejemplo: "green", tipo: "vocal" },
+        { simbolo: "ɪ", archivo: "PHONEME-PINK.mp3", ejemplo: "pink", tipo: "vocal" },
+        { simbolo: "ʊ", archivo: "PHONEME-WOOD.mp3", ejemplo: "wood", tipo: "vocal" },
+        { simbolo: "u:", archivo: "PHONEME-BLUE.mp3", ejemplo: "blue", tipo: "vocal" },
+        { simbolo: "e", archivo: "PHONEME-RED.mp3", ejemplo: "red", tipo: "vocal" },
+        { simbolo: "ə", archivo: "PHONEME-DUST.mp3", ejemplo: "dust", tipo: "vocal" },
+        { simbolo: "ɜ:r", archivo: "PHONEME-BIRD.mp3", ejemplo: "bird", tipo: "vocal" },
+        { simbolo: "ɔ:", archivo: "PHONEME-MAUVE.mp3", ejemplo: "mauve", tipo: "vocal" },
+        { simbolo: "æ", archivo: "PHONEME-SAND.mp3", ejemplo: "sand", tipo: "vocal" },
+        { simbolo: "ʌ", archivo: "PHONEME-CUP.mp3", ejemplo: "cup", tipo: "vocal" },
+        { simbolo: "ɑ:", archivo: "PHONEME-COFFEE.mp3", ejemplo: "coffee", tipo: "vocal" },
+        { simbolo: "ɒ", archivo: "PHONEME-POT.mp3", ejemplo: "pot", tipo: "vocal" },
+        { simbolo: "eɪ", archivo: "PHONEME-BAY.mp3", ejemplo: "bay", tipo: "vocal" },
+        { simbolo: "aɪ", archivo: "PHONEME-LIME.mp3", ejemplo: "lime", tipo: "vocal" },
+        { simbolo: "ɔɪ", archivo: "PHONEME-TURQUOISE.mp3", ejemplo: "boy", tipo: "vocal" },
+        { simbolo: "aʊ", archivo: "PHONEME-BROWN.mp3", ejemplo: "brown", tipo: "vocal" },
+        { simbolo: "oʊ", archivo: "PHONEME-GOLD.mp3", ejemplo: "gold", tipo: "vocal" },
+        { simbolo: "ɪə", archivo: "PHONEME-NEAR.mp3", ejemplo: "near", tipo: "vocal" },
+        { simbolo: "p", archivo: "PHONEME-PIG.mp3", ejemplo: "pig", tipo: "consonante" },
+        { simbolo: "b", archivo: "PHONEME-BEAR.mp3", ejemplo: "bear", tipo: "consonante" },
+        { simbolo: "t", archivo: "PHONEME-TURTLE.mp3", ejemplo: "turtle", tipo: "consonante" },
+        { simbolo: "d", archivo: "PHONEME-DOG.mp3", ejemplo: "dog", tipo: "consonante" },
+        { simbolo: "k", archivo: "PHONEME-CAT.mp3", ejemplo: "cat", tipo: "consonante" },
+        { simbolo: "g", archivo: "PHONEME-GOAT.mp3", ejemplo: "goat", tipo: "consonante" },
+        { simbolo: "f", archivo: "PHONEME-FROG.mp3", ejemplo: "frog", tipo: "consonante" },
+        { simbolo: "v", archivo: "PHONEME-BEAVER.mp3", ejemplo: "beaver", tipo: "consonante" },
+        { simbolo: "θ", archivo: "PHONEME-PANTHER.mp3", ejemplo: "panther", tipo: "consonante" },
+        { simbolo: "ð", archivo: "PHONEME-FEATHER.mp3", ejemplo: "feather", tipo: "consonante" },
+        { simbolo: "s", archivo: "PHONEME-SNAKE.mp3", ejemplo: "snake", tipo: "consonante" },
+        { simbolo: "z", archivo: "PHONEME-ZEBRA.mp3", ejemplo: "zebra", tipo: "consonante" },
+        { simbolo: "ʃ", archivo: "PHONEME-SHEEP.mp3", ejemplo: "sheep", tipo: "consonante" },
+        { simbolo: "ʒ", archivo: "PHONEME-TELEVISION.mp3", ejemplo: "television", tipo: "consonante" },
+        { simbolo: "tʃ", archivo: "PHONEME-CHICKEN.mp3", ejemplo: "chicken", tipo: "consonante" },
+        { simbolo: "dʒ", archivo: "PHONEME-GIRAFFE.mp3", ejemplo: "giraffe", tipo: "consonante" },
+        { simbolo: "h", archivo: "PHONEME-HORSE.mp3", ejemplo: "horse", tipo: "consonante" },
+        { simbolo: "m", archivo: "PHONEME-MOUSE.mp3", ejemplo: "mouse", tipo: "consonante" },
+        { simbolo: "n", archivo: "PHONEME-DINOSAUR.mp3", ejemplo: "dinosaur", tipo: "consonante" },
+        { simbolo: "ŋ", archivo: "PHONEME-PENGUIN.mp3", ejemplo: "penguin", tipo: "consonante" },
+        { simbolo: "l", archivo: "PHONEME-LION.mp3", ejemplo: "lion", tipo: "consonante" },
+        { simbolo: "r", archivo: "PHONEME-RABBIT.mp3", ejemplo: "rabbit", tipo: "consonante" },
+        { simbolo: "w", archivo: "PHONEME-WOLF.mp3", ejemplo: "wolf", tipo: "consonante" },
+        { simbolo: "j", archivo: "PHONEME-YAK.mp3", ejemplo: "yak", tipo: "consonante" }
+    ];
+
+    if (!window.audioTablaReal) window.audioTablaReal = null;
+    const tablaContenedor = document.getElementById('tabla-fonemas-dinamica');
+    if (!tablaContenedor) return;
+
+    tablaContenedor.innerHTML = '';
+
+    lista42Fonemas.filter(f => f.tipo === tipoFiltro).forEach(f => {
+        const botonF = document.createElement('button');
+        botonF.className = `btn-fonema-tabla ${f.tipo}`;
+        botonF.innerHTML = `<span class="simbolo-u">/${f.simbolo}/</span><span class="ejemplo-u">${f.ejemplo}</span>`;
         
-        // URL base absoluta oficial para conectar con los archivos del repositorio
-        const URL_BASE = `https://raw.githubusercontent.com/vecrecemosmx-cyber/phonemes/main/`;
-        const lista42Fonemas = [
-            { simbolo: "i:", archivo: "PHONEME-GREEN.mp3", ejemplo: "green", tipo: "vocal" },
-            { simbolo: "ɪ", archivo: "PHONEME-PINK.mp3", ejemplo: "pink", tipo: "vocal" },
-            { simbolo: "ʊ", archivo: "PHONEME-WOOD.mp3", ejemplo: "wood", tipo: "vocal" },
-            { simbolo: "u:", archivo: "PHONEME-BLUE.mp3", ejemplo: "blue", tipo: "vocal" },
-            { simbolo: "e", archivo: "PHONEME-RED.mp3", ejemplo: "red", tipo: "vocal" },
-            { simbolo: "ə", archivo: "PHONEME-DUST.mp3", ejemplo: "dust", tipo: "vocal" },
-            { simbolo: "ɜ:r", archivo: "PHONEME-BIRD.mp3", ejemplo: "bird", tipo: "vocal" },
-            { simbolo: "ɔ:", archivo: "PHONEME-MAUVE.mp3", ejemplo: "mauve", tipo: "vocal" },
-            { simbolo: "æ", archivo: "PHONEME-SAND.mp3", ejemplo: "sand", tipo: "vocal" },
-            { simbolo: "ʌ", archivo: "PHONEME-CUP.mp3", ejemplo: "cup", tipo: "vocal" },
-            { simbolo: "ɑ:", archivo: "PHONEME-COFFEE.mp3", ejemplo: "coffee", tipo: "vocal" },
-            { simbolo: "ɒ", archivo: "PHONEME-POT.mp3", ejemplo: "pot", tipo: "vocal" },
-            { simbolo: "eɪ", archivo: "PHONEME-BAY.mp3", ejemplo: "bay", tipo: "vocal" },
-            { simbolo: "aɪ", archivo: "PHONEME-LIME.mp3", ejemplo: "lime", tipo: "vocal" },
-            { simbolo: "ɔɪ", archivo: "PHONEME-TURQUOISE.mp3", ejemplo: "boy", tipo: "vocal" },
-            { simbolo: "aʊ", archivo: "PHONEME-BROWN.mp3", ejemplo: "brown", tipo: "vocal" },
-            { simbolo: "oʊ", archivo: "PHONEME-GOLD.mp3", ejemplo: "gold", tipo: "vocal" },
-            { simbolo: "ɪə", archivo: "PHONEME-NEAR.mp3", ejemplo: "near", tipo: "vocal" },
-            { simbolo: "p", archivo: "PHONEME-PIG.mp3", ejemplo: "pig", tipo: "consonante" },
-            { simbolo: "b", archivo: "PHONEME-BEAR.mp3", ejemplo: "bear", tipo: "consonante" },
-            { simbolo: "t", archivo: "PHONEME-TURTLE.mp3", ejemplo: "turtle", tipo: "consonante" },
-            { simbolo: "d", archivo: "PHONEME-DOG.mp3", ejemplo: "dog", tipo: "consonante" },
-            { simbolo: "k", archivo: "PHONEME-CAT.mp3", ejemplo: "cat", tipo: "consonante" },
-            { simbolo: "g", archivo: "PHONEME-GOAT.mp3", ejemplo: "goat", tipo: "consonante" },
-            { simbolo: "f", archivo: "PHONEME-FROG.mp3", ejemplo: "frog", tipo: "consonante" },
-            { simbolo: "v", archivo: "PHONEME-BEAVER.mp3", ejemplo: "beaver", tipo: "consonante" },
-            { simbolo: "θ", archivo: "PHONEME-PANTHER.mp3", ejemplo: "panther", tipo: "consonante" },
-            { simbolo: "ð", archivo: "PHONEME-FEATHER.mp3", ejemplo: "feather", tipo: "consonante" },
-            { simbolo: "s", archivo: "PHONEME-SNAKE.mp3", ejemplo: "snake", tipo: "consonante" },
-            { simbolo: "z", archivo: "PHONEME-ZEBRA.mp3", ejemplo: "zebra", tipo: "consonante" },
-            { simbolo: "ʃ", archivo: "PHONEME-SHEEP.mp3", ejemplo: "sheep", tipo: "consonante" },
-            { simbolo: "ʒ", archivo: "PHONEME-TELEVISION.mp3", ejemplo: "television", tipo: "consonante" },
-            { simbolo: "tʃ", archivo: "PHONEME-CHICKEN.mp3", ejemplo: "chicken", tipo: "consonante" },
-            { simbolo: "dʒ", archivo: "PHONEME-GIRAFFE.mp3", ejemplo: "giraffe", tipo: "consonante" },
-            { simbolo: "h", archivo: "PHONEME-HORSE.mp3", ejemplo: "horse", tipo: "consonante" },
-            { simbolo: "m", archivo: "PHONEME-MOUSE.mp3", ejemplo: "mouse", tipo: "consonante" },
-            { simbolo: "n", archivo: "PHONEME-DINOSAUR.mp3", ejemplo: "dinosaur", tipo: "consonante" },
-            { simbolo: "ŋ", archivo: "PHONEME-PENGUIN.mp3", ejemplo: "penguin", tipo: "consonante" },
-            { simbolo: "l", archivo: "PHONEME-LION.mp3", ejemplo: "lion", tipo: "consonante" },
-            { simbolo: "r", archivo: "PHONEME-RABBIT.mp3", ejemplo: "rabbit", tipo: "consonante" },
-            { simbolo: "w", archivo: "PHONEME-WOLF.mp3", ejemplo: "wolf", tipo: "consonante" },
-            { simbolo: "j", archivo: "PHONEME-YAK.mp3", ejemplo: "jak", tipo: "consonante" }
-        ];
+        // CORRECCIÓN: Volvemos a la estructura de fallback explícito nativo que respeta el flujo de hilos del navegador
+        function intentarReproducir(nombreArchivo) {
+            const urlMinuscula = URL_BASE + nombreArchivo;
+            const urlMayuscula = URL_BASE + nombreArchivo.replace('.mp3', '.MP3');
+            const urlTodoMinuscula = URL_BASE + nombreArchivo.toLowerCase();
 
-        if (!window.audioTablaReal) window.audioTablaReal = null;
-        const tablaContenedor = document.getElementById('tabla-fonemas-dinamica');
-        if (!tablaContenedor) return;
+            window.audioTablaReal = new Audio();
+            window.audioTablaReal.crossOrigin = "anonymous";
+            window.audioTablaReal.src = urlMinuscula;
 
-        // Filtramos la lista completa para quedarnos solo con lo que pide la lección
-        const fonemasFiltrados = lista42Fonemas.filter(f => f.tipo === tipoFiltro);
-
-        fonemasFiltrados.forEach(f => {
-            const botonF = document.createElement('button');
-            botonF.className = `btn-fonema-tabla ${f.tipo}`;
-            botonF.innerHTML = `
-                <span class="simbolo-u">/${f.simbolo}/</span>
-                <span class="ejemplo-u">${f.ejemplo}</span>
-            `;
-
-            function intentarReproducir(nombreArchivo) {
-                const urlMinuscula = URL_BASE + nombreArchivo;
-                const urlMayuscula = URL_BASE + nombreArchivo.replace('.mp3', '.MP3');
-                const urlTodoMinuscula = URL_BASE + nombreArchivo.toLowerCase();
-
-                window.audioTablaReal = new Audio();
-                window.audioTablaReal.crossOrigin = "anonymous";
-                window.audioTablaReal.src = urlMinuscula;
-
+            window.audioTablaReal.play().catch(() => {
+                window.audioTablaReal.src = urlMayuscula;
                 window.audioTablaReal.play().catch(() => {
-                    window.audioTablaReal.src = urlMayuscula;
-                    window.audioTablaReal.play().catch(() => {
-                        window.audioTablaReal.src = urlTodoMinuscula;
-                        window.audioTablaReal.play().catch(err => {
-                            console.error(`🚨 Falló audio de /${f.simbolo}/ en ruta:\n👉 ${urlMinuscula}`);
-                            botonF.classList.remove('reproduciendo-audio');
-                        });
+                    window.audioTablaReal.src = urlTodoMinuscula;
+                    window.audioTablaReal.play().catch(err => {
+                        console.error(`🚨 Falló audio de /${f.simbolo}/ en ruta:\n👉 ${urlMinuscula}`, err);
+                        botonF.classList.remove('reproduciendo-audio');
                     });
                 });
-
-                window.audioTablaReal.onended = () => {
-                    botonF.classList.remove('reproduciendo-audio');
-                };
-            }
-
-            botonF.addEventListener('click', () => {
-                if (window.audioTablaReal) {
-                    window.audioTablaReal.pause();
-                    document.querySelectorAll('.btn-fonema-tabla').forEach(b => b.classList.remove('reproduciendo-audio'));
-                }
-
-                botonF.classList.add('reproduciendo-audio');
-                intentarReproducir(f.archivo);
             });
 
-            tablaContenedor.appendChild(botonF);
+            window.audioTablaReal.onended = () => {
+                botonF.classList.remove('reproduciendo-audio');
+            };
+        }
+
+        botonF.addEventListener('click', () => {
+            if (window.audioTablaReal) {
+                window.audioTablaReal.pause();
+                document.querySelectorAll('.btn-fonema-tabla').forEach(b => b.classList.remove('reproduciendo-audio'));
+            }
+
+            botonF.classList.add('reproduciendo-audio');
+            intentarReproducir(f.archivo);
         });
-    }
+
+        tablaContenedor.appendChild(botonF);
+    });
+}
